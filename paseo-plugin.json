@@ -1,0 +1,6 @@
+{
+  "id": "paseo-grokbot-webhook",
+  "name": "Grok Bot Webhook",
+  "description": "POSTs selected Paseo agent lifecycle events to a Grok Bot routine webhook (fire-and-forget, one direction).",
+  "requirements": { "paseo": ">=0.14.0" }
+}
