@@ -8,6 +8,9 @@ having to watch the terminal.
 > **Status: scaffold / design first.** This commit contains only the README
 > and MIT license. No plugin code has landed yet.
 
+Working on this repo? Read [`AGENTS.md`](AGENTS.md) — the agent brief and
+commit/branch/PR conventions live there.
+
 ## Why this exists
 
 Paseo emits terminal/activity lifecycle events, and Grok Bot supports
