@@ -96,8 +96,11 @@ agent loop.
 1. `npm install && npm run typecheck` in this directory.
 2. `paseo plugin install /absolute/path/to/paseo-grokbot-webhook`
    (or paste the path into **Settings → Plugins → Plugin source**).
-3. Set `GROK_WEBHOOK_URL` and `GROK_WEBHOOK_KEY` in the environment the
-   Paseo daemon runs under, then reload the plugin.
+3. Set `GROK_WEBHOOK_URL` and `GROK_WEBHOOK_KEY` either in the daemon
+   process environment **or** in `$PASEO_HOME/webhook.env` (same `KEY=value`
+   lines; mode `0600`), then `paseo plugin reload paseo-grokbot-webhook`.
+4. Against Paseo **0.14**, hooks register via `server.on` / `server.before`
+   (the docs' `addHook` names land in 0.15).
 4. On the Grok Bot side, create a webhook routine whose job is to babysit
    the agent on wake (check status, nudge, approve permissions, etc.).
 

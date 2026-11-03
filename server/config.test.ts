@@ -78,4 +78,33 @@ describe("loadConfig", () => {
       expect(message).not.toContain("token=abc");
     }
   });
+
+  it("fills missing env from webhook.env file overlay", () => {
+    const { warn } = warns();
+    const config = loadConfig(
+      {},
+      warn,
+      { GROK_WEBHOOK_URL: URL_VALUE, GROK_WEBHOOK_KEY: KEY_VALUE },
+    );
+    expect(config).toEqual({
+      url: URL_VALUE,
+      key: KEY_VALUE,
+      host: "hooks.example.com",
+    });
+  });
+
+  it("lets process env win over the file overlay", () => {
+    const { warn } = warns();
+    const config = loadConfig(
+      { GROK_WEBHOOK_URL: URL_VALUE, GROK_WEBHOOK_KEY: KEY_VALUE },
+      warn,
+      {
+        GROK_WEBHOOK_URL: "https://file.example.com/x",
+        GROK_WEBHOOK_KEY: "file-key",
+      },
+    );
+    expect(config?.url).toBe(URL_VALUE);
+    expect(config?.key).toBe(KEY_VALUE);
+  });
+
 });
