@@ -9,5 +9,5 @@ Glossary for humans and agents. Terms only — product intent lives in [`README.
 - **Webhook wake** — the single outbound `POST` this plugin sends to `GROK_WEBHOOK_URL` when a filtered event fires, with `Authorization: Bearer $GROK_WEBHOOK_KEY`.
 - **`GROK_WEBHOOK_URL`** — env var: the Grok Bot routine's webhook endpoint. Required.
 - **`GROK_WEBHOOK_KEY`** — env var: bearer token sent with the POST. Required. Never logged or committed.
-- **Payload** — the JSON body of the wake POST: Paseo agent id/name, the lifecycle event name, and an outcome/permission summary.
+- **Payload** — the JSON body of the wake POST: `v`, `event`, `ts`, `agentId`, optional `title`, plus `kind`/`tool` for permission wakes or `outcome` (`completed`/`failed`) and `errorCode` for turn ends. Never raw tool args, `cwd`, or env.
 - **Fire-and-forget** — send and move on: delivery failures are logged, never retried, never thrown back into the agent loop.

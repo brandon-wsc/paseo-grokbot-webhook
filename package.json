@@ -1,0 +1,23 @@
+{
+  "name": "paseo-grokbot-webhook",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Paseo plugin that POSTs agent lifecycle events to a Grok Bot routine webhook",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@getpaseo/client": "0.14.0",
+    "@getpaseo/plugin": "0.14.0",
+    "@getpaseo/protocol": "0.14.0",
+    "@types/node": "^20.19.43",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}
