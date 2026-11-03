@@ -3,6 +3,7 @@ import type { PluginHookAgent } from "@getpaseo/plugin/server";
 import type { AgentPermissionRequest } from "@getpaseo/protocol/agent-types";
 import {
   buildPermissionPendingPayload,
+  buildTurnCompletedPayload,
   buildTurnFailedPayload,
 } from "./payload";
 
@@ -53,6 +54,23 @@ describe("buildPermissionPendingPayload", () => {
     expect(payload).not.toHaveProperty("tool");
     expect(JSON.stringify(payload)).not.toContain("rm -rf");
     expect(JSON.stringify(payload)).not.toContain("/home/user/secret-project");
+  });
+});
+
+describe("buildTurnCompletedPayload", () => {
+  it("reports the completed outcome with base fields only", () => {
+    const payload = buildTurnCompletedPayload(
+      { agent, turnId: "t-1", outcome: { kind: "completed" } },
+      TS,
+    );
+    expect(payload).toEqual({
+      v: 1,
+      ts: TS,
+      event: "agent.turn.after",
+      agentId: "agent-1",
+      title: "Fix flaky test",
+      outcome: "completed",
+    });
   });
 });
 

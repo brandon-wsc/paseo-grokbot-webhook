@@ -5,6 +5,7 @@ import type { WakePayload } from "./payload";
 import {
   createWakeFilter,
   PERMISSION_DEBOUNCE_MS,
+  TURN_COMPLETED_DEBOUNCE_MS,
   TURN_FAILURE_COOLDOWN_MS,
 } from "./wake";
 
@@ -86,14 +87,51 @@ describe("permission debounce", () => {
   });
 });
 
+describe("turn completion", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("posts a wake with outcome completed", () => {
+    const { post, filter } = setup();
+    filter.turnAfter({ agent: agent("a1"), outcome: { kind: "completed" } });
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(post.mock.calls[0]![0]).toMatchObject({
+      event: "agent.turn.after",
+      outcome: "completed",
+      agentId: "a1",
+    });
+  });
+
+  it("collapses bursty double ends inside the short debounce window", () => {
+    const { post, filter } = setup();
+    const a = agent("a1");
+    filter.turnAfter({ agent: a, outcome: { kind: "completed" } });
+    filter.turnAfter({ agent: a, outcome: { kind: "completed" } });
+    expect(post).toHaveBeenCalledTimes(1);
+    filter.turnAfter({ agent: agent("a2"), outcome: { kind: "completed" } });
+    expect(post).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(TURN_COMPLETED_DEBOUNCE_MS);
+    filter.turnAfter({ agent: a, outcome: { kind: "completed" } });
+    expect(post).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not put completed turns on the failure cooldown window", () => {
+    const { post, filter } = setup();
+    const a = agent("a1");
+    filter.turnAfter({ agent: a, outcome: { kind: "completed" } });
+    vi.advanceTimersByTime(TURN_COMPLETED_DEBOUNCE_MS + 1);
+    filter.turnAfter({ agent: a, outcome: { kind: "completed" } });
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe("turn failure cooldown", () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it("posts on failed outcome only", () => {
+  it("posts on failed outcome, never on canceled", () => {
     const { post, filter } = setup();
     const a = agent("a1");
-    filter.turnAfter({ agent: a, outcome: { kind: "completed" } });
     filter.turnAfter({ agent: a, outcome: { kind: "canceled", reason: "user" } });
     expect(post).not.toHaveBeenCalled();
     filter.turnAfter({
@@ -148,6 +186,17 @@ describe("agentGone", () => {
     filter.turnAfter({ agent: agent("a1"), outcome });
     filter.agentGone("a1");
     filter.turnAfter({ agent: agent("a1"), outcome });
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+
+  it("resets the completed debounce for that agent", () => {
+    const { post, filter } = setup();
+    const a = agent("a1");
+    filter.turnAfter({ agent: a, outcome: { kind: "completed" } });
+    filter.turnAfter({ agent: a, outcome: { kind: "completed" } });
+    expect(post).toHaveBeenCalledTimes(1);
+    filter.agentGone("a1");
+    filter.turnAfter({ agent: a, outcome: { kind: "completed" } });
     expect(post).toHaveBeenCalledTimes(2);
   });
 });

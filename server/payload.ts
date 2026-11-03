@@ -20,13 +20,21 @@ export interface PermissionPendingPayload extends WakePayloadBase {
   tool?: string;
 }
 
+export interface TurnCompletedPayload extends WakePayloadBase {
+  event: "agent.turn.after";
+  outcome: "completed";
+}
+
 export interface TurnFailedPayload extends WakePayloadBase {
   event: "agent.turn.after";
   outcome: "failed";
   errorCode?: string;
 }
 
-export type WakePayload = PermissionPendingPayload | TurnFailedPayload;
+export type WakePayload =
+  | PermissionPendingPayload
+  | TurnCompletedPayload
+  | TurnFailedPayload;
 
 function agentFields(agent: PluginHookAgent, ts: string): WakePayloadBase {
   return {
@@ -49,6 +57,17 @@ export function buildPermissionPendingPayload(
     ...(request.kind === "tool" && request.name
       ? { tool: request.name }
       : {}),
+  };
+}
+
+export function buildTurnCompletedPayload(
+  event: AgentTurnAfterEvent,
+  ts: string,
+): TurnCompletedPayload {
+  return {
+    ...agentFields(event.agent, ts),
+    event: "agent.turn.after",
+    outcome: "completed",
   };
 }
 

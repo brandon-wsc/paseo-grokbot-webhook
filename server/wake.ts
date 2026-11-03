@@ -5,12 +5,14 @@ import type {
 import type { AgentPermissionRequest } from "@getpaseo/protocol/agent-types";
 import {
   buildPermissionPendingPayload,
+  buildTurnCompletedPayload,
   buildTurnFailedPayload,
   type WakePayload,
 } from "./payload";
 
 export const PERMISSION_DEBOUNCE_MS = 10_000;
 export const TURN_FAILURE_COOLDOWN_MS = 10 * 60_000;
+export const TURN_COMPLETED_DEBOUNCE_MS = 2_000;
 
 export interface Scheduler {
   setTimeout(callback: () => void, ms: number): unknown;
@@ -27,6 +29,7 @@ export interface WakeFilterOptions {
   post: (payload: WakePayload, signal?: AbortSignal) => Promise<void>;
   permissionDebounceMs?: number;
   turnCooldownMs?: number;
+  turnCompletedDebounceMs?: number;
   now?: () => number;
   scheduler?: Scheduler;
 }
@@ -55,11 +58,14 @@ export interface WakeFilter {
 export function createWakeFilter(options: WakeFilterOptions): WakeFilter {
   const debounceMs = options.permissionDebounceMs ?? PERMISSION_DEBOUNCE_MS;
   const cooldownMs = options.turnCooldownMs ?? TURN_FAILURE_COOLDOWN_MS;
+  const completedDebounceMs =
+    options.turnCompletedDebounceMs ?? TURN_COMPLETED_DEBOUNCE_MS;
   const now = options.now ?? Date.now;
   const scheduler = options.scheduler ?? defaultScheduler;
 
   const pending = new Map<string, PendingPermission>();
   const lastFailurePost = new Map<string, number>();
+  const lastCompletedPost = new Map<string, number>();
   let disposed = false;
 
   return {
@@ -93,10 +99,27 @@ export function createWakeFilter(options: WakeFilterOptions): WakeFilter {
     },
 
     turnAfter({ agent, outcome }, signal) {
-      if (disposed || outcome.kind !== "failed") {
+      if (disposed || outcome.kind === "canceled") {
         return;
       }
       const t = now();
+      if (outcome.kind === "completed") {
+        // Every completed turn may wake the bot; the short window only
+        // collapses bursty double turn_ended emissions for the same agent.
+        const last = lastCompletedPost.get(agent.id);
+        if (last !== undefined && t - last < completedDebounceMs) {
+          return;
+        }
+        lastCompletedPost.set(agent.id, t);
+        void options.post(
+          buildTurnCompletedPayload(
+            { agent, turnId: null, outcome },
+            new Date(t).toISOString(),
+          ),
+          signal,
+        );
+        return;
+      }
       const last = lastFailurePost.get(agent.id);
       if (last !== undefined && t - last < cooldownMs) {
         return;
@@ -119,6 +142,7 @@ export function createWakeFilter(options: WakeFilterOptions): WakeFilter {
         }
       }
       lastFailurePost.delete(agentId);
+      lastCompletedPost.delete(agentId);
     },
 
     dispose() {
@@ -128,6 +152,7 @@ export function createWakeFilter(options: WakeFilterOptions): WakeFilter {
       }
       pending.clear();
       lastFailurePost.clear();
+      lastCompletedPost.clear();
     },
   };
 }

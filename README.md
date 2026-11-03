@@ -53,7 +53,7 @@ are never logged.
 |------------|----------|
 | `agent.permission.before` | Debounce 10s (deduped by `request.id`); if the request is still pending when the timer fires, POST a wake. Every permission kind (`tool`, `plan`, `question`, `mode`, `other`) counts. |
 | `agent.permission.after` | Cancels the pending debounce — a resolved request never wakes the bot. |
-| `agent.turn.after` | POST only when `outcome.kind === "failed"`, with a 10-minute cooldown per agent. `completed` and `canceled` never wake the bot. |
+| `agent.turn.after` | POST when `outcome.kind === "completed"` — every completed turn may wake the bot; a short 2s per-agent window only collapses bursty double `turn_ended` emissions. POST when `outcome.kind === "failed"`, with a 10-minute cooldown per agent. `canceled` never wakes the bot. |
 | `agent.close.after`, `agent.archive.after` | Clear the agent's pending debounces and cooldown state; never POST. |
 
 ## Payload
@@ -73,12 +73,12 @@ A small JSON body, versioned:
 ```
 
 - `event` — the hook that fired (`agent.permission.before` = pending
-  permission, `agent.turn.after` = failed turn)
+  permission, `agent.turn.after` = turn ended)
 - `agentId`, `title?` — which Paseo agent wants attention
 - `kind` + `tool?` — permission kind, and the tool name for `tool`
   requests
-- `outcome` + `errorCode?` — on turn failure (`outcome` is always
-  `"failed"`)
+- `outcome` + `errorCode?` — on turn end (`completed` or `failed`;
+  `errorCode` only on failure)
 
 Deliberately absent: raw tool arguments, `cwd`, error message text, env —
 nothing that could carry secrets or local paths.
