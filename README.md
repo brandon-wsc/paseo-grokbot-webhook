@@ -101,10 +101,37 @@ agent loop.
 3. Set `GROK_WEBHOOK_URL` and `GROK_WEBHOOK_KEY` either in the daemon
    process environment **or** in `$PASEO_HOME/webhook.env` (same `KEY=value`
    lines; mode `0600`), then `paseo plugin reload paseo-grokbot-webhook`.
-4. Against Paseo **0.14**, hooks register via `server.on` / `server.before`
+5. Against Paseo **0.14**, hooks register via `server.on` / `server.before`
    (the docs' `addHook` names land in 0.15).
-4. On the Grok Bot side, create a webhook routine whose job is to babysit
-   the agent on wake (check status, nudge, approve permissions, etc.).
+6. On the Grok Bot side, create a webhook routine whose job is to babysit
+   the agent on wake. Follow **Consumer contract** below — the wake is a
+   hint, not fleet truth.
+
+## Consumer contract
+
+This plugin is deliberately a fire-and-forget push. That keeps the Paseo
+agent loop free of retries and durable queues. The cost is that the Grok
+Bot side must treat every wake as a **hint**:
+
+1. **Wake ≠ truth.** On wake, re-read the live Paseo agent (pending
+   permissions, turn state, worktree/branch). Use the payload only to
+   decide *where to look* (`agentId`, optional `title` / `kind` /
+   `outcome`). Never dispatch new work from the payload alone — wakes can
+   be dropped or duplicated.
+2. **Lease by task id.** Put a stable task id in the Paseo agent title
+   (e.g. `CAR-12: …` or a Linear/issue key). On wake, key babysit state by
+   that task id: a repeat wake refreshes status; it does not spawn a second
+   agent or a second worktree. Paseo owns worktrees; the bot owns the
+   soft lease.
+3. **Failure memory.** When `outcome` is `failed`, append one line to an
+   `attempts.jsonl` (or equivalent) with `ts`, `agentId`, task id from
+   title, `errorCode`, and a short note. This file is open/advisory — no
+   CI gate — and is the one failure log the machine can grow without a
+   human.
+
+Optional later: a pull-side heartbeat ("agent X exists but no event for N
+minutes") covers the case where hook names change and the plugin goes
+inert with zero errors. Not required for the contract above.
 
 ## Development
 

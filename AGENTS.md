@@ -23,6 +23,7 @@ A thin [Paseo](https://paseo.sh) plugin that POSTs selected Paseo agent lifecycl
 3. **One direction** — Paseo → Grok Bot. The plugin exposes no endpoint and takes no commands back; the Grok Bot routine decides what to do on wake.
 4. **Env config is required** — `GROK_WEBHOOK_URL` and `GROK_WEBHOOK_KEY` must both be set or the plugin stays inert. No defaults that silently POST somewhere.
 5. **No secrets in logs or commits** — never print the bearer key or the full webhook URL at info level; never commit `.env` files or real endpoints.
+6. **Wake is a hint for the consumer** — this plugin does not retry or persist dedupe across daemon restarts. The Grok Bot routine must re-read Paseo state, lease by task id in the agent title, and append failed turns to `attempts.jsonl`. See README → Consumer contract.
 
 ## Working agreements
 
