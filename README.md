@@ -101,11 +101,14 @@ agent loop.
 3. Set `GROK_WEBHOOK_URL` and `GROK_WEBHOOK_KEY` either in the daemon
    process environment **or** in `$PASEO_HOME/webhook.env` (same `KEY=value`
    lines; mode `0600`), then `paseo plugin reload paseo-grokbot-webhook`.
-5. Against Paseo **0.14**, hooks register via `server.on` / `server.before`
+4. Against Paseo **0.14**, hooks register via `server.on` / `server.before`
    (the docs' `addHook` names land in 0.15).
-6. On the Grok Bot side, create a webhook routine whose job is to babysit
+5. On the Grok Bot side, create a webhook routine whose job is to babysit
    the agent on wake. Follow **Consumer contract** below — the wake is a
    hint, not fleet truth.
+6. On that same Grok Bot routine, keep a schedule heartbeat: if a watched
+   session exists but there has been no wake for N minutes, pull Paseo
+   once. Silence after a hook rename is indistinguishable from "all fine".
 
 ## Consumer contract
 
@@ -123,15 +126,19 @@ Bot side must treat every wake as a **hint**:
    that task id: a repeat wake refreshes status; it does not spawn a second
    agent or a second worktree. Paseo owns worktrees; the bot owns the
    soft lease.
-3. **Failure memory.** When `outcome` is `failed`, append one line to an
-   `attempts.jsonl` (or equivalent) with `ts`, `agentId`, task id from
-   title, `errorCode`, and a short note. This file is open/advisory — no
-   CI gate — and is the one failure log the machine can grow without a
-   human.
-
-Optional later: a pull-side heartbeat ("agent X exists but no event for N
-minutes") covers the case where hook names change and the plugin goes
-inert with zero errors. Not required for the contract above.
+3. **Failure memory.** When `outcome` is `failed`, append one line to a
+   `wake-failures.jsonl` (bot-side only; never reuse Cardex/repo
+   `attempts.jsonl`) with `ts`, `agentId`, task id from title,
+   `errorCode`, and a short note. Open/advisory — no CI gate. Different
+   name, different schema, different purpose: Cardex `attempts.jsonl` is
+   gated (`att-NNNN`, `area[]` paths) and must not be a second truth for
+   babysit failures.
+4. **Pull heartbeat (required).** If a watched agent/session exists but
+   no wake for N minutes, the Grok Bot routine schedule must pull Paseo
+   once. Hook rename → inert plugin with zero errors looks identical to
+   "all quiet"; silence is the failure mode. Cost is near zero on an
+   existing schedule. Consumer-side only — this plugin still never polls
+   (AGENTS hard boundary #2).
 
 ## Development
 
