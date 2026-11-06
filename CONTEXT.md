@@ -14,4 +14,5 @@ Glossary for humans and agents. Terms only — product intent lives in [`README.
 
 - **Wake hint** — a webhook POST that means "look here"; not authoritative fleet state. The consumer must re-read Paseo before acting.
 - **Task id lease** — soft ownership keyed by a stable id in the Paseo agent title; duplicate wakes refresh status instead of spawning another agent/worktree.
-- **attempts.jsonl** — open, ungated append-only failure log grown from `outcome: failed` wakes; advisory memory for the babysitter, not a CI signal.
+- **wake-failures.jsonl** — bot-side open/ungated append-only log grown from `outcome: failed` wakes (`ts`, `agentId`, task id, `errorCode`, note). Advisory babysit memory — not Cardex `attempts.jsonl` and not a CI signal.
+- **Pull heartbeat** — required consumer-side schedule check: watched session exists but no wake for N minutes → pull Paseo once. Detects inert-plugin silence after hook renames; the plugin itself never polls.
