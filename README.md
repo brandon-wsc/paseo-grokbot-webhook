@@ -5,9 +5,11 @@ lifecycle events to a Grok Bot routine webhook — so Dev (or related bots)
 can be woken up when a Paseo agent needs follow-up, instead of a human
 having to watch the terminal.
 
-> **Status: implemented.** Server-only plugin; no client UI. Verified with
-> `npm run typecheck` and `npm test`. Not yet installed against a live
-> Paseo daemon.
+> **Status: live.** Server-only plugin; no client UI. Verified with
+> `npm run typecheck` and `npm test`. Installed on the Grok Bot box Paseo
+> daemon (directory install from the `feat-webhook-plugin` worktree +
+> `GROK_WEBHOOK_URL` / `GROK_WEBHOOK_KEY` via `webhook.env`); wakes Dev on
+> pending permission (≥10s), failed turns, and completed turns.
 
 Working on this repo? Read [`AGENTS.md`](AGENTS.md) — the agent brief and
 commit/branch/PR conventions live there.

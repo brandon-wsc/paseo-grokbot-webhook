@@ -6,7 +6,7 @@ Execution conventions (commits, branches, pull requests) live **in this file**. 
 
 ## What this is
 
-A thin [Paseo](https://paseo.sh) plugin that POSTs selected Paseo agent lifecycle events to a Grok Bot routine webhook — so Dev (or related bots) wakes when a Paseo agent needs follow-up instead of a human watching the terminal. One direction, fire-and-forget. The repo is currently a scaffold: README, MIT license, and these conventions — no plugin code yet.
+A thin [Paseo](https://paseo.sh) plugin that POSTs selected Paseo agent lifecycle events to a Grok Bot routine webhook — so Dev (or related bots) wakes when a Paseo agent needs follow-up instead of a human watching the terminal. One direction, fire-and-forget. Implemented and running live on the Grok Bot box Paseo daemon.
 
 ## Single sources of truth
 
